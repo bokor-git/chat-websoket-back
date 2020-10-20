@@ -2,15 +2,10 @@ import express from 'express'
 import http from 'http'
 import socketio from 'socket.io'
 
-
 const app = express()
-
 const server = http.createServer(app)
-
 const socket = socketio(server);
-
 const usersState = new Map()
-
 const messages: Array<any> = []
 
 app.get('/', (req, res) => {
@@ -18,7 +13,6 @@ app.get('/', (req, res) => {
 });
 
 socket.on('connection', (socketChannel) => {
-
     socket.on('disconnect', () => {
         usersState.delete(socketChannel)
     });
@@ -28,9 +22,8 @@ socket.on('connection', (socketChannel) => {
         user.name = name
     })
     socketChannel.on("client-typed", () => {
-        socket.emit("user-typing", usersState.get(socketChannel))
+        socketChannel.broadcast.emit("user-typing", usersState.get(socketChannel))
     })
-
     socketChannel.on('client-message-sent', (message: string) => {
         if (typeof message !== "string") {
             return
@@ -42,12 +35,9 @@ socket.on('connection', (socketChannel) => {
             user: {id: user.id, name: user.name}
         };
         messages.push(messageItem)
-
         socket.emit("new-message-sent", messageItem)
     });
-
     socketChannel.emit("innit-massaged-published", messages)
-
     console.log('a user connected');
 });
 
