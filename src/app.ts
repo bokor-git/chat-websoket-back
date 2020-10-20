@@ -11,9 +11,7 @@ const socket = socketio(server);
 
 const usersState = new Map()
 
-const messages:Array<any> = [
-
-]
+const messages: Array<any> = []
 
 app.get('/', (req, res) => {
     res.send("Its WebSocket Server");
@@ -22,12 +20,15 @@ app.get('/', (req, res) => {
 socket.on('connection', (socketChannel) => {
 
     socket.on('disconnect', () => {
-      usersState.delete(socketChannel)
+        usersState.delete(socketChannel)
     });
     usersState.set(socketChannel, {id: new Date().getTime().toString(), name: "anonym"})
     socketChannel.on("client-name-sent", (name: string) => {
         const user = usersState.get(socketChannel);
         user.name = name
+    })
+    socketChannel.on("client-typed", () => {
+        socket.emit("user-typing", usersState.get(socketChannel))
     })
 
     socketChannel.on('client-message-sent', (message: string) => {
