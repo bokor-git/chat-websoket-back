@@ -9,10 +9,10 @@ const server = http.createServer(app)
 
 const socket = socketio(server);
 
-const messages = [
-    {message: "Hello", id: "vs32gg34g34g", user: {id: "sdvsddv24f4", name: "Dimych"}},
-    {message: "Hello 2", id: "vs32sdgsg34g", user: {id: "sdg34g4f4", name: "Alex"}},
-    {message: "Hello yo yo", id: "vs32dsfsgsg34g", user: {id: "sdsdfg4f4", name: "Peter"}}
+const usersState = new Map()
+
+const messages:Array<any> = [
+
 ]
 
 app.get('/', (req, res) => {
@@ -20,14 +20,32 @@ app.get('/', (req, res) => {
 });
 
 socket.on('connection', (socketChannel) => {
+
+    socket.on('disconnect', () => {
+      usersState.delete(socketChannel)
+    });
+    usersState.set(socketChannel, {id: new Date().getTime().toString(), name: "anonym"})
+    socketChannel.on("client-name-sent", (name: string) => {
+        const user = usersState.get(socketChannel);
+        user.name = name
+    })
+
     socketChannel.on('client-message-sent', (message: string) => {
-        let messageItem = {message: message, id: "vs32sdgsg34g"+new Date().getTime(), user: {id: "sdg34g4f4", name: "Alex"}};
+        if (typeof message !== "string") {
+            return
+        }
+        const user = usersState.get(socketChannel);
+        let messageItem = {
+            message: message,
+            id: new Date().getTime(),
+            user: {id: user.id, name: user.name}
+        };
         messages.push(messageItem)
 
-        socket.emit("new-message-sent",messageItem)
+        socket.emit("new-message-sent", messageItem)
     });
 
-    socketChannel.emit("innit-massaged-published",messages)
+    socketChannel.emit("innit-massaged-published", messages)
 
     console.log('a user connected');
 });
